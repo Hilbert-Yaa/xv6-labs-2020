@@ -40,3 +40,11 @@ void free(void*);
 int atoi(const char*);
 int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
+
+// user defined macros
+#define stdin 0
+#define stdout 1
+#define stderr 2
+#define PIPE_READ 0
+#define PIPE_WRITE 1
+

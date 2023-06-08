@@ -5,12 +5,12 @@
 int main(int argc, char *argv[]) {
 
   if (argc != 2) {
-    fprintf(2, "Usage: sleep time\n");
+    fprintf(stderr, "Usage: sleep time\n");
     exit(1);
   }
 
   if (sleep(atoi(argv[1])) < 0) {
-    fprintf(2, "sleep: failed to sleep\n");
+    fprintf(stderr, "sleep: failed to sleep\n");
     exit(1);
   }
 
