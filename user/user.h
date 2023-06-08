@@ -47,4 +47,5 @@ void *memcpy(void *, const void *, uint);
 #define stderr 2
 #define PIPE_READ 0
 #define PIPE_WRITE 1
+#define NULL 0
 
