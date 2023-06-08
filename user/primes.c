@@ -2,6 +2,7 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
+__attribute((noreturn))
 void sieve_handler(int prev[2]) {
   // read-only to prev pipe, write-only to next pipe
   close(prev[PIPE_WRITE]);
@@ -45,6 +46,8 @@ void sieve_handler(int prev[2]) {
         }
       }
     }
+    close(next[PIPE_WRITE]);
+    wait(NULL);
   } else {
     // child: invoke the sieve_handler with next pipe
     close(prev[PIPE_READ]);
