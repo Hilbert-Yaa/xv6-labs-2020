@@ -9,7 +9,7 @@ struct execcmd {
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    fprintf(stderr, "xargs: missing arguments\n");
+    fprintf(stderr, "Usage: cmd... | xargs cmd...\n");
     exit(1);
   }
 
