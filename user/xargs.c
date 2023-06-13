@@ -22,7 +22,6 @@ int main(int argc, char *argv[]) {
   uint8 cur = 0; // str cursor
 
   while (read(stdin, &ch, sizeof(char))) {
-    fprintf(stderr, "current char: %c, buf strlen: %d\n", ch, strlen(arg_buf));
     if (ch == '\n') {
       // end of line, append buf to cmd args, exec cmd and reset buf ptr
       arg_buf[cur] = '\0';
