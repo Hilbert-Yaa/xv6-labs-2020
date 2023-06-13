@@ -22,6 +22,15 @@ strcmp(const char *p, const char *q)
   return (uchar)*p - (uchar)*q;
 }
 
+int
+strncmp(const char *p, const char *q, uint n)
+{
+  uint i = 0;
+  while(*p && *p == *q && i + 1 < n)
+    p++, q++, i++;
+  return (uchar)*p - (uchar)*q;
+}
+
 uint
 strlen(const char *s)
 {
