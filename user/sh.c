@@ -2,7 +2,9 @@
 
 #include "kernel/fcntl.h"
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "user/user.h"
+#include "kernel/fs.h"
 
 // Parsed command representation
 #define EXEC 1
@@ -54,8 +56,7 @@ void panic(char *);
 struct cmd *parsecmd(char *);
 
 // Execute cmd.  Never returns.
-__attribute__((noreturn))
-void runcmd(struct cmd *cmd) {
+__attribute__((noreturn)) void runcmd(struct cmd *cmd) {
   int p[2];
   struct backcmd *bcmd;
   struct execcmd *ecmd;
@@ -75,14 +76,14 @@ void runcmd(struct cmd *cmd) {
     if (ecmd->argv[0] == 0)
       exit(1);
     exec(ecmd->argv[0], ecmd->argv);
-    fprintf(2, "exec %s failed\n", ecmd->argv[0]);
+    fprintf(stderr, "exec %s failed\n", ecmd->argv[0]);
     break;
 
   case REDIR:
     rcmd = (struct redircmd *)cmd;
     close(rcmd->fd);
     if (open(rcmd->file, rcmd->mode) < 0) {
-      fprintf(2, "open %s failed\n", rcmd->file);
+      fprintf(stderr, "open %s failed\n", rcmd->file);
       exit(1);
     }
     runcmd(rcmd->cmd);
@@ -129,10 +130,84 @@ void runcmd(struct cmd *cmd) {
   exit(0);
 }
 
+char *fmtname(char *path) {
+  static char buf[DIRSIZ + 1];
+  char *p;
+
+  // Find first character after last slash.
+  for (p = path + strlen(path); p >= path && *p != '/'; p--)
+    ;
+  p++;
+
+  // Return blank-padded name.
+  if (strlen(p) >= DIRSIZ)
+    return p;
+  memmove(buf, p, strlen(p));
+  memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
+  return buf;
+}
+
+void initcomp() { exit(0); }
+
+int getcomp(char *buf, int nbuf, int max) {
+  int fd, mc = 0; // note: mc => match counter
+  char candi_buf[128], path_buf[128] = ".";
+  char *p = path_buf + 1;
+  struct dirent de;
+  struct stat st;
+  if ((fd = open(".", 0)) < 0) {
+    fprintf(stderr, "sh: cannot open cwd\n");
+    return -1;
+  } else if (fstat(fd, &st) < 0 || st.type != T_DIR) {
+    fprintf(stderr, "sh: cannot stat cwd as directory\n");
+    return -1;
+  }
+
+  *p++ = '/';
+  while (read(fd, &de, sizeof(de)) == sizeof(de)) {
+    if (de.inum == 0)
+      continue;
+    memmove(p, de.name, DIRSIZ);
+    p[DIRSIZ] = '\0';
+    if (strncmp(fmtname(path_buf), buf, nbuf) == 0) {
+      if (mc++ == 0) {
+        strcpy(candi_buf, fmtname(path_buf));
+      }
+    }
+    if (mc == 1) {
+      strcpy(buf, candi_buf);
+    }
+  }
+  return mc;
+}
+
+char *getswithcomp(char *buf, int max) {
+  int i, cc;
+  char c;
+
+  for (i = 0; i + 1 < max;) {
+    cc = read(0, &c, 1);
+    if (cc < 1)
+      break;
+    if (c == '\t') {
+      if (getcomp(buf, i, max) == 1)
+      {
+        fprintf(stderr, "###completion found...\n$ %s\n", buf);
+        continue;
+      }
+    }
+    buf[i++] = c;
+    if (c == '\n' || c == '\r')
+      break;
+  }
+  buf[i] = '\0';
+  return buf;
+}
+
 int getcmd(char *buf, int nbuf) {
-  fprintf(2, "$ ");
+  fprintf(stderr, "$ ");
   memset(buf, 0, nbuf);
-  gets(buf, nbuf);
+  getswithcomp(buf, nbuf);
   if (buf[0] == 0) // EOF
     return -1;
   return 0;
@@ -156,7 +231,7 @@ int main(void) {
       // Chdir must be called by the parent, not the child.
       buf[strlen(buf) - 1] = 0; // chop \n
       if (chdir(buf + 3) < 0)
-        fprintf(2, "cannot cd %s\n", buf + 3);
+        fprintf(stderr, "cannot cd %s\n", buf + 3);
       continue;
     }
     if (fork1() == 0)
@@ -167,7 +242,7 @@ int main(void) {
 }
 
 void panic(char *s) {
-  fprintf(2, "%s\n", s);
+  fprintf(stderr, "%s\n", s);
   exit(1);
 }
 
@@ -310,7 +385,7 @@ struct cmd *parsecmd(char *s) {
   cmd = parseline(&s, es);
   peek(&s, es, "");
   if (s != es) {
-    fprintf(2, "leftovers: %s\n", s);
+    fprintf(stderr, "leftovers: %s\n", s);
     panic("syntax");
   }
   nulterminate(cmd);
