@@ -82,3 +82,18 @@ uint64 sys_trace(void) {
     return -1;
   return 0;
 }
+
+uint64 sys_sysinfo(void) {
+  struct proc *p = myproc();
+  uint64 st_addr;
+  struct sysinfo st;
+
+  if (argaddr(0, &st_addr) < 0)
+    return -1;
+
+  st.freemem = freememcount();
+  st.nproc = countproc();
+  if (copyout(p->pagetable, st_addr, (char *)&st, sizeof(st)) < 0)
+    return -1;
+  return 0;
+}

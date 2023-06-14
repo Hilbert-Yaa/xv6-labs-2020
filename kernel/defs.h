@@ -97,6 +97,7 @@ void            procinit(void);
 void            scheduler(void) __attribute__((noreturn));
 void            sched(void);
 void            setproc(struct proc*);
+uint64          countproc(void);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
 int             wait(uint64);
