@@ -1,7 +1,6 @@
 // Physical memory allocator, for user processes,
 // kernel stacks, page-table pages,
 // and pipe buffers. Allocates whole 4096-byte pages.
-
 #include "types.h"
 #include "param.h"
 #include "memlayout.h"
@@ -79,4 +78,21 @@ kalloc(void)
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
+}
+
+// Get the number of free pages of physical memory.
+// Returns free memory size in the unit of bytes.
+uint64 kfreememcount(void) {
+  struct run *r;
+  uint64 count = 0;
+
+  acquire(&kmem.lock);
+  r = kmem.freelist;
+  while (r) {
+    count++;
+    r = r->next;
+  }
+  release(&kmem.lock);
+
+  return count << 12;
 }
