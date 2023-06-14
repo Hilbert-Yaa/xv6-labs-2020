@@ -82,7 +82,7 @@ kalloc(void)
 
 // Get the number of free pages of physical memory.
 // Returns free memory size in the unit of bytes.
-uint64 kfreememcount(void) {
+uint64 freememcount(void) {
   struct run *r;
   uint64 count = 0;
 
